@@ -1,7 +1,10 @@
 import { faker } from "@faker-js/faker";
 import Cryptr from "cryptr";
+import bcrypt from "bcrypt";
 
-import { TransactionTypes } from "../repositories/cardRepository.js";
+import { findById, TransactionTypes } from "../repositories/cardRepository.js";
+
+const cryptr = new Cryptr("unlockCVV");
 
 export async function createCardInfo(employeeInfo, cardType: TransactionTypes) {
 	const {id: employeeId, fullName} = employeeInfo;
@@ -32,9 +35,51 @@ export async function createCardInfo(employeeInfo, cardType: TransactionTypes) {
 		type
 	};
 
-	return cardObj;
+	return {cardObj, cardCVV};
 
 }
+
+export async function cardActivation(info) {
+	const {id, password, CVV} = info;
+
+	const checkCardInfo = await findById(id);
+	if(!checkCardInfo) {
+		throw {name: 404, message: "Card not found"};
+	}
+
+	const{expirationDate, password: databasePassword, securityCode} = checkCardInfo;
+
+	const isCardValid = await valideExpirationDate(expirationDate);
+	if(!isCardValid) {
+		throw {name: 401, message: "This card expired"};
+	}
+
+	if(databasePassword !== null) {
+		throw {name: 401, message: "This card has already been activated"};
+	}
+
+
+	const isCVVValid = await validateCVV(CVV, securityCode);
+	if(isCVVValid === false) {
+		throw {name: 401, message: "Invalid CVV"};
+	}
+
+	const hashPassword = encryptCardPassword(password);
+
+	const activateCardObj= {
+		password: hashPassword
+	};
+
+	return activateCardObj;
+
+}
+
+
+
+/////////// Aux Functions ///////////
+
+
+
 
 async function createCardNumber() {
 	return faker.finance.creditCardNumber();
@@ -72,7 +117,41 @@ function createCardCVV() {
 }
 
 function cryptCVV(cardCVV: string) {
-	const cryptr = new Cryptr("unlockCVV");
 	const encryptedCVV = cryptr.encrypt(cardCVV);
 	return encryptedCVV;
 }
+
+function encryptCardPassword(password) {
+	const saltRounds = 12;
+	const hashPassword = bcrypt.hashSync(password, saltRounds);
+	return hashPassword;
+}
+
+async function valideExpirationDate(expirationDate: string) {
+	const dateArr = expirationDate.split("/");
+	const lastDayOfMonth = "30";
+
+	const expirationYear = `20${dateArr[dateArr.length - 1]}`;
+	const expirationMonth = dateArr[0];
+	const fullExpirationDate = new Date(`${expirationYear}-${expirationMonth}-${lastDayOfMonth}`);
+	const expirationDateTime = fullExpirationDate.getTime();
+
+	const today = new Date();
+	const todayTime = today.getTime();
+
+	if(expirationDateTime - todayTime <= 0) {
+		return false;
+	}
+
+	return true;
+}
+
+async function validateCVV(CVV, securityCode: string) {
+	const decryptedCVV = parseInt(cryptr.decrypt(securityCode));
+
+	if(parseInt(CVV) !== decryptedCVV) {
+		return false;
+	}
+	return true;
+}
+

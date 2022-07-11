@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 
-import { insert } from "../repositories/cardRepository.js";
-import { createCardInfo } from "../services/cardService.js";
+
+import { insert, update } from "../repositories/cardRepository.js";
+import { cardActivation, createCardInfo } from "../services/cardService.js";
 import { checkIfEmployeeExists } from "../services/employeeServices.js";
 
 export async function createCard(req: Request, res:Response){
@@ -12,9 +13,23 @@ export async function createCard(req: Request, res:Response){
 
 	const employeeInfo = await checkIfEmployeeExists(employeeId, companyId);
 
-	const cardInfo = await createCardInfo(employeeInfo, type);
-	
-	await insert(cardInfo);
+	const {cardObj, cardCVV} = await createCardInfo(employeeInfo, type);
 
-	res.sendStatus(201);
+	const cardResponse = {...cardObj, securityCode: cardCVV};
+	
+	await insert(cardObj);
+
+	res.status(201).send(cardResponse);
+}
+
+export async function activateCard(req: Request, res: Response) {
+	const activateCardInfo = req.body;
+	const { id } = activateCardInfo;
+
+	const activateCardObj = await cardActivation(activateCardInfo);
+
+	await update(id, activateCardObj);
+
+	res.sendStatus(200);
+	
 }
