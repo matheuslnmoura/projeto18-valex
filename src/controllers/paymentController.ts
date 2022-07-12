@@ -13,6 +13,4 @@ export async function createPayment(req: Request, res: Response) {
 	await insert({cardId, businessId, amount});
 
 	res.sendStatus(200);
-
-	// console.log(isPaymentValid);
 }
