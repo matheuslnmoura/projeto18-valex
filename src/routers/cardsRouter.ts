@@ -1,8 +1,8 @@
 import { Router } from "express";
 
-import { activateCard, createCard } from "../controllers/cardsController.js";
+import { activateCard, createCard, getCard } from "../controllers/cardsController.js";
 import {verifyIfApikey, validateApiKey} from "../middlewares/verifyApiKey.js";
-import { validateCreateCardInfo, validateActivateCardInfo } from "../middlewares/cardValidations.js";
+import { validateCreateCardInfo, validateActivateCardInfo, validateGetCardInfo } from "../middlewares/cardValidations.js";
 
 
 
@@ -16,6 +16,8 @@ cardRouter.post (
 );
 
 cardRouter.patch("/activate-card", validateActivateCardInfo, activateCard);
+
+cardRouter.get("/get-card", validateGetCardInfo, getCard);
 
 
 export default cardRouter;

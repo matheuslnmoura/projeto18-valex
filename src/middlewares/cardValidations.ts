@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import joi from "joi";
 import chalk from "chalk";
 
+const joiPasswordSchema = joi.string().length(4).pattern(/^[0-9]+$/).required();
+
 
 export function validateCreateCardInfo(req: Request, res: Response, next: NextFunction){
 	const createCardInfo = req.body;
@@ -31,8 +33,24 @@ export function validateActivateCardInfo(req: Request, res: Response, next: Next
 	if (error) {
 		throw{ name: 422, message: error.message };
 	}
+	res.locals.user = activateCardInfo;
 	next();
 }
 
+export function validateGetCardInfo(req: Request, res: Response, next: NextFunction){
+	const getCardInfo = req.body;
+	const getCardInfoSchema = joi.object({
+		employeeId: joi.number().integer().required(),
+		cardPassword: joiPasswordSchema,
+	});
+
+	const {error} = getCardInfoSchema.validate(getCardInfo, {abortEarly: false});
+
+	if (error) {
+		throw{ name: 422, message: error.message };
+	}
+	next();
+
+}
 
 

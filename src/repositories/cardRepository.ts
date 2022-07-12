@@ -40,6 +40,13 @@ export async function findById(id: number) {
 	return result.rows[0];
 }
 
+export async function findByEmployeeId(employeeId: number) {
+	const result = await connection.query<Card>(
+		"SELECT * FROM cards WHERE \"employeeId\" = $1 AND password IS NOT NULL AND \"isBlocked\" = false",
+		[employeeId]);
+	return result.rows;
+}
+
 export async function findByTypeAndEmployeeId(
 	type: TransactionTypes,
 	employeeId: number

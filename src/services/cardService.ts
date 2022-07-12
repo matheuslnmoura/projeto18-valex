@@ -1,15 +1,9 @@
-import { faker } from "@faker-js/faker";
-import Cryptr from "cryptr";
-import bcrypt from "bcrypt";
+import { findByEmployeeId, findById, TransactionTypes } from "../repositories/cardRepository.js";
+import { createCardCVV, createCardholderName, createCardNumber, createExpirationDate, cryptCVV, decryptCVV, encryptCardPassword, validateCVV, validatePassword, valideExpirationDate } from "../utils/cardUtils.js";
 
-import { findById, TransactionTypes } from "../repositories/cardRepository.js";
-
-const cryptr = new Cryptr("unlockCVV");
 
 export async function createCardInfo(employeeInfo, cardType: TransactionTypes) {
 	const {id: employeeId, fullName} = employeeInfo;
-	// console.log(employeeInfo);
-	// console.log(type);
 
 	const number = await createCardNumber();
 	const cardholderName = createCardholderName(fullName);
@@ -63,8 +57,9 @@ export async function cardActivation(info) {
 	if(isCVVValid === false) {
 		throw {name: 401, message: "Invalid CVV"};
 	}
-
+	
 	const hashPassword = encryptCardPassword(password);
+	
 
 	const activateCardObj= {
 		password: hashPassword
@@ -74,84 +69,33 @@ export async function cardActivation(info) {
 
 }
 
+export async function getEmployeeCard(info) {
+	const { employeeId, cardPassword} = info;
 
+	const cards = await findByEmployeeId(employeeId);
 
-/////////// Aux Functions ///////////
+	const matchedCards = [];
+	for(let i = 0; i < cards.length; i++) {
+		const card = cards[i];
+		const {password: databasePassword, number, cardholderName, expirationDate, securityCode} = card;
+		const isValidPassword = await validatePassword(cardPassword, databasePassword);
 
-
-
-
-async function createCardNumber() {
-	return faker.finance.creditCardNumber();
-}
-
-function createCardholderName(fullName: string) {
-	const fullNameArr = fullName.split(" ");
-	let middleNameInitials = "";
-
-	for(let i = 1; i < ((fullNameArr.length) -1 ); i++) { 
-		const middleNames = fullNameArr[i];
-		if(middleNames.length > 3) {
-			middleNameInitials += middleNames[0] + " ";
+		if(isValidPassword) {
+			const decryptedCVV =  decryptCVV(securityCode);
+			matchedCards.push({
+				number,
+				cardholderName,
+				expirationDate,
+				securityCode: `${decryptedCVV}`,
+			});
 		}
 	}
 
-	const cardholderName = `${fullNameArr[0]} ${middleNameInitials}${fullNameArr[fullNameArr.length - 1]}`;
-	
-	return cardholderName;
+	return matchedCards;
 }
 
-function createExpirationDate() {
-	const today = new Date();
-	const currentYear = today.getFullYear();
-	const expirationYear = (currentYear + 5).toString();
-	const mm = today.getMonth() + 1;
 
-	const expirationDate = `${mm < 10? "0" + mm: mm}/${expirationYear[expirationYear.length - 2]}${expirationYear[expirationYear.length - 1]}`;
 
-	return expirationDate;
-}
 
-function createCardCVV() {
-	return faker.finance.creditCardCVV();
-}
 
-function cryptCVV(cardCVV: string) {
-	const encryptedCVV = cryptr.encrypt(cardCVV);
-	return encryptedCVV;
-}
-
-function encryptCardPassword(password) {
-	const saltRounds = 12;
-	const hashPassword = bcrypt.hashSync(password, saltRounds);
-	return hashPassword;
-}
-
-async function valideExpirationDate(expirationDate: string) {
-	const dateArr = expirationDate.split("/");
-	const lastDayOfMonth = "30";
-
-	const expirationYear = `20${dateArr[dateArr.length - 1]}`;
-	const expirationMonth = dateArr[0];
-	const fullExpirationDate = new Date(`${expirationYear}-${expirationMonth}-${lastDayOfMonth}`);
-	const expirationDateTime = fullExpirationDate.getTime();
-
-	const today = new Date();
-	const todayTime = today.getTime();
-
-	if(expirationDateTime - todayTime <= 0) {
-		return false;
-	}
-
-	return true;
-}
-
-async function validateCVV(CVV, securityCode: string) {
-	const decryptedCVV = parseInt(cryptr.decrypt(securityCode));
-
-	if(parseInt(CVV) !== decryptedCVV) {
-		return false;
-	}
-	return true;
-}
 
