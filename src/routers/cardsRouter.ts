@@ -11,7 +11,8 @@ const cardRouter = Router();
 cardRouter.post (
 	"/create-card",  
 	verifyIfApikey, 
-	validateApiKey, 
+	validateApiKey,
+	validateCreateCardInfo, 
 	createCard
 );
 
