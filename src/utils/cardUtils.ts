@@ -86,7 +86,7 @@ export function decryptCVV(securityCode) {
 	return decryptedCVV;
 }
 
-export async function validatePassword(cardPassword, databasePassword) {
+export async function validatePassword(cardPassword: string, databasePassword: string) {
 	const isValidPassword = bcrypt.compareSync(cardPassword, databasePassword);
 	return isValidPassword;
 }

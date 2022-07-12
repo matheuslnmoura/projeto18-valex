@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { insert } from "../repositories/rechargeRepository.js";
-import { validateCardInfo } from "../services/rechargeService.js";
+import { validateCardInfo } from "../services/cardService.js";
 
 export async function rechargeCard(req: Request, res: Response) {
 	const rechargeInfo = req.body;

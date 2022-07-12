@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import joi from "joi";
 import chalk from "chalk";
 
-const joiPasswordSchema = joi.string().length(4).pattern(/^[0-9]+$/).required();
+export const joiPasswordSchema = joi.string().length(4).pattern(/^[0-9]+$/);
 
 
 export function validateCreateCardInfo(req: Request, res: Response, next: NextFunction){
@@ -21,11 +21,13 @@ export function validateCreateCardInfo(req: Request, res: Response, next: NextFu
 }
 
 export function validateActivateCardInfo(req: Request, res: Response, next: NextFunction){
-	const {id, password, CVV} = req.body;
-	const activateCardInfo = {id, password: password.toString(), CVV};
+	const activateCardInfo = req.body;
+	if(activateCardInfo.password) {
+		activateCardInfo.password = activateCardInfo.password.toString();
+	}
 	const activateCardInfoSchema = joi.object({
 		id: joi.number().required(),
-		password: joi.string().length(4).pattern(/^[0-9]+$/).required(),
+		password: joiPasswordSchema,
 		CVV: joi.number().required()
 	});
 	const { error } = activateCardInfoSchema.validate(activateCardInfo, {abortEarly: false});
