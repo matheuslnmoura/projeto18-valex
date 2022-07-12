@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import joi from "joi";
 import chalk from "chalk";
 
-export function validateBalanceInfo(req: Request, res: Response, next: NextFunction){
+export function validateIfCardId(req: Request, res: Response, next: NextFunction){
 	const cardInfo = req.body;
 
 	const cardInfoSchema = joi.object({

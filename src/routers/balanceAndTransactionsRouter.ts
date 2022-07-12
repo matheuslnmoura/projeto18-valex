@@ -1,12 +1,12 @@
 import { Router } from "express";
 
-import { validateBalanceInfo } from "../middlewares/balanceAndTransactionsValidation.js";
+import { validateIfCardId } from "../middlewares/balanceAndTransactionsValidation.js";
 import getBalanceAndTransactions from "../controllers/balanceAndTransactionsController.js";
 
 
 const balanceAndTransactionsRouter = Router();
 
-balanceAndTransactionsRouter.get("/balance", validateBalanceInfo, getBalanceAndTransactions );
+balanceAndTransactionsRouter.get("/balance", validateIfCardId, getBalanceAndTransactions );
 
 
 export default balanceAndTransactionsRouter;
